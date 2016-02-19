@@ -6,9 +6,11 @@
 %{?java_common_find_provides_and_requires}
 %endif
 
+%global buildscls %{scl_maven} %{scl}
+
 Name:		%{?scl_prefix}mongo-java-driver
 Version:	3.2.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A Java driver for MongoDB
 
 Group:		Development/Libraries
@@ -22,10 +24,10 @@ Patch1:         add-maven-support.patch
 %{!?scl:
 BuildRequires:	java-devel
 }
-BuildRequires:  %{?scl_prefix_java_common}maven-local
-BuildRequires:  %{?scl_prefix_devtoolset}mvn(io.netty:netty-buffer)
-BuildRequires:  %{?scl_prefix_devtoolset}mvn(io.netty:netty-transport)
-BuildRequires:  %{?scl_prefix_devtoolset}mvn(io.netty:netty-handler)
+BuildRequires:  %{?scl_prefix_maven}maven-local
+BuildRequires:  %{?scl_prefix_java_common}mvn(io.netty:netty-buffer)
+BuildRequires:  %{?scl_prefix_java_common}mvn(io.netty:netty-transport)
+BuildRequires:  %{?scl_prefix_java_common}mvn(io.netty:netty-handler)
 BuildRequires:  %{?scl_prefix_java_common}mvn(org.slf4j:slf4j-api)
 BuildRequires:  %{?scl_prefix_java_common}mvn(org.hamcrest:hamcrest-library)
 BuildRequires:  %{?scl_prefix_maven}mvn(org.apache.maven.plugins:maven-shade-plugin)
@@ -77,22 +79,14 @@ Group:		Documentation
 %description javadoc
 This package contains the API documentation for %{name}.
 
-#%package bson-javadoc
-#Summary:	Javadoc for %{name}-bson
-#Group:		Documentation
-
-#%description bson-javadoc
-#This package contains the API documentation for %{name}-bson.
-
 %prep
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{buildscls} - << "EOF"}
 %setup -qn %{pkg_name}-r%{version}
 
 %patch1 -p1
 
 find -name '*.class' -exec rm -f '{}' \;
 find -name '*.jar' -exec rm -f '{}' \;
-#sed -i -e "s|@VERSION@|%{version}|g" maven/maven-bson.xml maven/maven-mongo-java-driver.xml
 set -ex
 %mvn_package org.mongodb:bson:* %{pkg_name}-bson
 %mvn_package org.mongodb:%{pkg_name}:* %{pkg_name}
@@ -108,30 +102,27 @@ set -ex
 %{?scl:EOF}
 
 %build
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{buildscls} - << "EOF"}
 set -ex
+export MAVEN_OPTS="-Xmx2048m"
 %mvn_build -- -Dproject.build.sourceEncoding=UTF-8
 %{?scl:EOF}
 
 
 %install
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{buildscls} - << "EOF"}
 set -ex
 %mvn_install
-# Java-docs
-#install -d -m 755                 %{buildroot}%{_javadocdir}/%{pkg_name}
-#install -d -m 755                 %{buildroot}%{_javadocdir}/%{pkg_name}-bson
-#cp -r -p docs/mongo-java-driver/* %{buildroot}%{_javadocdir}/%{pkg_name}
-#cp -r -p docs/bson/*              %{buildroot}%{_javadocdir}/%{pkg_name}-bson
 %{?scl:EOF}
 
-%files -f .mfiles-%{pkg_name}
+%files -f .mfiles-%{pkg_name} -f .mfiles
 %doc README.md LICENSE.txt
-%{_datadir}/maven-metadata/mongo-java-driver.xml
-%{_mavenpomdir}/%{pkg_name}/aggregator-project.pom
 
 %files bson -f .mfiles-%{pkg_name}-bson
 %doc README.md LICENSE.txt
+%dir %{_mavenpomdir}/%{pkg_name}
+%dir %{_datadir}/java/%{pkg_name}
+%dir %{_datadir}/maven-metadata
 
 %files driver -f .mfiles-%{pkg_name}-driver
 
@@ -142,13 +133,13 @@ set -ex
 %files javadoc -f .mfiles-javadoc
 %doc README.md LICENSE.txt
 
-#%files bson-javadoc
-#%{_javadocdir}/%{pkg_name}-bson
-#%doc README.md LICENSE.txt
 
 %changelog
+* Thu Feb 18 2016 Marek Skalicky <mskalick@redhat.com> - 3.2.1-2
+- Fixed directory ownership
+
 * Tue Feb 2 2016 Marek Skalicky <mskalick@redhat.com> - 3.2.1-1
-- Upgrade to 3.2.1 release
+- Upgrade to 3.2.1 release (from Fedora 24)
 
 * Mon Jul 27 2015 Severin Gehwolf <sgehwolf@redhat.com> - 2.13.2-5
 - Fix bugs in SCL-ization. Most importantly, pkg name prefix.
