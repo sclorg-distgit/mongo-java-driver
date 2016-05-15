@@ -5,8 +5,8 @@
 %{?java_common_find_provides_and_requires}
 
 Name:		%{?scl_prefix}mongo-java-driver
-Version:	2.11.4
-Release:	7%{?dist}
+Version:	2.14.1
+Release:	1%{?dist}
 Summary:	A Java driver for MongoDB
 
 Group:		Development/Libraries
@@ -108,6 +108,10 @@ cp -r -p docs/bson/*              %{buildroot}%{_javadocdir}/%{name}-bson
 %doc README.md LICENSE.txt
 
 %changelog
+* Tue Feb 2 2016 Marek Skalicky <mskalick@redhat.com> - 2.14.1-1
+- Upgrade to latest compatible release 2.14.1
+  Resolves: RHBZ#1247166
+
 * Thu Mar 19 2015 Marek Skalicky <mskalick@redhat.com> - 2.11.4-7
 - Fixed maven-metadata ownership
 
