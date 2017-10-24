@@ -1,0 +1,26 @@
+From cfc7a97f2ed55bdfea4a54f510ea17039b259644 Mon Sep 17 00:00:00 2001
+From: Tomas Repik <trepik@redhat.com>
+Date: Mon, 3 Jul 2017 18:47:19 +0200
+Subject: [PATCH] Netty update workaround (commit 454cbfe)
+
+---
+ driver-core/src/main/com/mongodb/connection/netty/NettyStream.java | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/driver-core/src/main/com/mongodb/connection/netty/NettyStream.java b/driver-core/src/main/com/mongodb/connection/netty/NettyStream.java
+index 8ef8713..eae9db0 100644
+--- a/driver-core/src/main/com/mongodb/connection/netty/NettyStream.java
++++ b/driver-core/src/main/com/mongodb/connection/netty/NettyStream.java
+@@ -177,7 +177,8 @@ final class NettyStream implements Stream {
+     public void writeAsync(final List<ByteBuf> buffers, final AsyncCompletionHandler<Void> handler) {
+         CompositeByteBuf composite = PooledByteBufAllocator.DEFAULT.compositeBuffer();
+         for (ByteBuf cur : buffers) {
+-            composite.addComponent(true, ((NettyByteBuf) cur).asByteBuf());
++            composite.addComponent(((NettyByteBuf) cur).asByteBuf());
++            composite.writerIndex(composite.writerIndex() + ((NettyByteBuf) cur).asByteBuf().readableBytes());
+         }
+ 
+         channel.writeAndFlush(composite).addListener(new ChannelFutureListener() {
+-- 
+2.9.4
+

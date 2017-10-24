@@ -9,8 +9,8 @@
 %global buildscls %{scl_maven} %{scl}
 
 Name:		%{?scl_prefix}mongo-java-driver
-Version:	3.2.1
-Release:	2%{?dist}
+Version:	3.5.0
+Release:	3%{?dist}
 Summary:	A Java driver for MongoDB
 
 Group:		Development/Libraries
@@ -19,11 +19,11 @@ License:	ASL 2.0
 URL:		http://www.mongodb.org/display/DOCS/Java+Language+Center
 Source0:	https://github.com/mongodb/%{pkg_name}/archive/r%{version}.tar.gz
 
-Patch1:         add-maven-support.patch
+Patch0:         0001-Maven-support.patch
+Patch1:         0002-Netty-update-workaround.patch
 
-%{!?scl:
-BuildRequires:	java-devel
-}
+# since 3.4.2 Java 8 is required
+BuildRequires:	java-1.8.0-openjdk-devel
 BuildRequires:  %{?scl_prefix_maven}maven-local
 BuildRequires:  %{?scl_prefix_java_common}mvn(io.netty:netty-buffer)
 BuildRequires:  %{?scl_prefix_java_common}mvn(io.netty:netty-transport)
@@ -31,7 +31,7 @@ BuildRequires:  %{?scl_prefix_java_common}mvn(io.netty:netty-handler)
 BuildRequires:  %{?scl_prefix_java_common}mvn(org.slf4j:slf4j-api)
 BuildRequires:  %{?scl_prefix_java_common}mvn(org.hamcrest:hamcrest-library)
 BuildRequires:  %{?scl_prefix_maven}mvn(org.apache.maven.plugins:maven-shade-plugin)
-
+BuildRequires:  %{?scl_prefix_maven}mvn(org.apache.felix:maven-bundle-plugin)
 
 %description
 This is the Java driver for MongoDB.
@@ -68,7 +68,6 @@ parties can wrap this layer to provide custom higher-level APIs
 Summary:	The MongoDB Java Async Driver
 Group:		Development/Libraries
 
-
 %description driver-async
 The MongoDB Asynchronous Driver.
 
@@ -83,7 +82,10 @@ This package contains the API documentation for %{name}.
 %{?scl:scl enable %{buildscls} - << "EOF"}
 %setup -qn %{pkg_name}-r%{version}
 
+%patch0 -p1
 %patch1 -p1
+
+sed -i 's/@VERSION@/%{version}/g' `find -name pom.xml`
 
 find -name '*.class' -exec rm -f '{}' \;
 find -name '*.jar' -exec rm -f '{}' \;
@@ -101,13 +103,15 @@ set -ex
 %mvn_file org.mongodb:mongodb-driver:* %{pkg_name}/driver
 %{?scl:EOF}
 
+
 %build
 %{?scl:scl enable %{buildscls} - << "EOF"}
 set -ex
 export MAVEN_OPTS="-Xmx2048m"
+# not very nice hack needed in RHEL6
+export JAVA_HOME="/usr/lib/jvm/java-1.8.0"
 %mvn_build -- -Dproject.build.sourceEncoding=UTF-8
 %{?scl:EOF}
-
 
 %install
 %{?scl:scl enable %{buildscls} - << "EOF"}
@@ -120,13 +124,15 @@ set -ex
 
 %files bson -f .mfiles-%{pkg_name}-bson
 %doc README.md LICENSE.txt
-%dir %{_mavenpomdir}/%{pkg_name}
-%dir %{_datadir}/java/%{pkg_name}
+%dir %{_datadir}/java/mongo-java-driver
 %dir %{_datadir}/maven-metadata
+%dir %{_datadir}/maven-poms/mongo-java-driver
 
 %files driver -f .mfiles-%{pkg_name}-driver
+%doc README.md LICENSE.txt
 
 %files driver-core -f .mfiles-%{pkg_name}-driver-core
+%doc README.md LICENSE.txt
 
 %files driver-async -f .mfiles-%{pkg_name}-driver-async
 
@@ -135,6 +141,21 @@ set -ex
 
 
 %changelog
+* Mon Oct 02 2017 Marek Skalický <mskalick@redhat.com> - 3.5.0-3
+- Fix directory ownership
+  Resolves: RHBZ#1466860
+
+* Fri Sep 22 2017 Marek Skalický <mskalick@redhat.com> - 3.5.0-2
+- Update to latest upstream version
+  Resolves: RHBZ#1466860
+
+* Mon Jul 03 2017 Tomas Repik <trepik@redhat.com> - 3.4.2-1
+- Update to 3.4.2
+  Resolves: RHBZ#1466860
+
+* Tue Mar 29 2016 Severin Gehwolf <sgehwolf@redhat.com> - 3.2.1-3
+- Add basic OSGi metadata.
+
 * Thu Feb 18 2016 Marek Skalicky <mskalick@redhat.com> - 3.2.1-2
 - Fixed directory ownership
 
