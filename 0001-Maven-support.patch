@@ -1,0 +1,628 @@
+From ce1fc6cd336f623101a72b6d3de3d95d42998316 Mon Sep 17 00:00:00 2001
+From: Michael Simacek <msimacek@redhat.com>
+Date: Fri, 23 Jun 2017 18:21:43 +0200
+Subject: [PATCH] Maven support
+
+---
+ bson/pom.xml                                       |  90 ++++++++++++++
+ driver-async/pom.xml                               | 107 +++++++++++++++++
+ driver-core/pom.xml                                | 121 +++++++++++++++++++
+ .../unit/com/mongodb/ConnectionStringTest.java     |   2 +-
+ driver/pom.xml                                     |  77 ++++++++++++
+ mongo-java-driver/pom.xml                          | 133 +++++++++++++++++++++
+ pom.xml                                            |  27 +++++
+ 7 files changed, 551 insertions(+), 1 deletion(-)
+ create mode 100644 bson/pom.xml
+ create mode 100644 driver-async/pom.xml
+ create mode 100644 driver-core/pom.xml
+ create mode 100644 driver/pom.xml
+ create mode 100644 mongo-java-driver/pom.xml
+ create mode 100644 pom.xml
+
+diff --git a/bson/pom.xml b/bson/pom.xml
+new file mode 100644
+index 0000000..4076687
+--- /dev/null
++++ b/bson/pom.xml
+@@ -0,0 +1,90 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <groupId>org.mongodb</groupId>
++    <artifactId>aggregator-project</artifactId>
++    <version>@VERSION@</version>
++  </parent>
++  <groupId>org.mongodb</groupId>
++  <artifactId>bson</artifactId>
++  <version>@VERSION@</version>
++  <name>BSON</name>
++  <description>The BSON library</description>
++  <url>http://bsonspec.org</url>
++  <packaging>bundle</packaging>
++  <licenses>
++    <license>
++      <name>The Apache Software License, Version 2.0</name>
++      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++      <distribution>repo</distribution>
++    </license>
++  </licenses>
++  <developers>
++    <developer>
++      <name>Various</name>
++      <organization>MongoDB</organization>
++    </developer>
++  </developers>
++  <scm>
++    <connection>scm:https://github.com/mongodb/mongo-java-driver.git</connection>
++    <developerConnection>scm:git@github.com:mongodb/mongo-java-driver.git</developerConnection>
++    <url>https://github.com/mongodb/mongo-java-driver</url>
++  </scm>
++  <dependencies>
++    <dependency>
++      <groupId>org.slf4j</groupId>
++      <artifactId>slf4j-api</artifactId>
++      <version>1.7.6</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>
++      <scope>test</scope>
++    </dependency>
++  </dependencies>
++  <build>
++    <sourceDirectory>src/main</sourceDirectory>
++    <testSourceDirectory>src/test/unit</testSourceDirectory>
++    <plugins>
++      <plugin>
++        <artifactId>maven-compiler-plugin</artifactId>
++        <configuration>
++          <source>1.7</source>
++          <target>1.7</target>
++        </configuration>
++      </plugin>
++      <plugin>
++        <artifactId>maven-jar-plugin</artifactId>
++        <executions>
++          <execution>
++            <goals>
++              <goal>test-jar</goal>
++            </goals>
++          </execution>
++        </executions>
++      </plugin>
++      <plugin>
++        <groupId>org.apache.felix</groupId>
++        <artifactId>maven-bundle-plugin</artifactId>
++        <extensions>true</extensions>
++        <configuration>
++          <instructions>
++            <Bundle-Vendor>Red Hat, Inc.</Bundle-Vendor>
++            <Bundle-SymbolicName>org.mongodb.bson</Bundle-SymbolicName>
++            <Export-Package>org.bson,org.bson.*</Export-Package>
++            <Import-Package>
++                    javax.xml.bind.*,
++                    org.slf4j;resolution:=optional,
++            </Import-Package>
++            <!-- Do not autogenerate uses clauses in Manifests -->
++            <_nouses>true</_nouses>
++          </instructions>
++        </configuration>
++      </plugin>
++    </plugins>
++  </build>
++</project>
+diff --git a/driver-async/pom.xml b/driver-async/pom.xml
+new file mode 100644
+index 0000000..7771e1b
+--- /dev/null
++++ b/driver-async/pom.xml
+@@ -0,0 +1,107 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <groupId>org.mongodb</groupId>
++    <artifactId>aggregator-project</artifactId>
++    <version>@VERSION@</version>
++  </parent>
++
++  <groupId>org.mongodb</groupId>
++  <artifactId>mongodb-driver-async</artifactId>
++  <version>@VERSION@</version>
++  <name>MongoDB Asynchronous Driver</name>
++  <description>The MongoDB Asynchronous Driver</description>
++  <url>http://www.mongodb.org</url>
++  <packaging>bundle</packaging>
++  <licenses>
++    <license>
++      <name>The Apache Software License, Version 2.0</name>
++      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++      <distribution>repo</distribution>
++    </license>
++  </licenses>
++  <developers>
++    <developer>
++      <name>Various</name>
++      <organization>MongoDB</organization>
++    </developer>
++  </developers>
++  <scm>
++    <connection>scm:https://github.com/mongodb/mongo-java-driver.git</connection>
++    <developerConnection>scm:git@github.com:mongodb/mongo-java-driver.git</developerConnection>
++    <url>https://github.com/mongodb/mongo-java-driver</url>
++  </scm>
++  <dependencies>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>bson</artifactId>
++      <version>@VERSION@</version>
++    </dependency>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>mongodb-driver-core</artifactId>
++      <version>@VERSION@</version>
++    </dependency>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-transport</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.slf4j</groupId>
++      <artifactId>slf4j-api</artifactId>
++      <version>1.7.6</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>
++      <scope>test</scope>
++    </dependency>
++  </dependencies>
++  <build>
++    <sourceDirectory>src/main</sourceDirectory>
++    <testSourceDirectory>src/test/unit</testSourceDirectory>
++    <plugins>
++      <plugin>
++        <artifactId>maven-compiler-plugin</artifactId>
++        <configuration>
++          <source>1.7</source>
++          <target>1.7</target>
++        </configuration>
++      </plugin>
++      <plugin>
++        <groupId>org.apache.felix</groupId>
++        <artifactId>maven-bundle-plugin</artifactId>
++        <extensions>true</extensions>
++        <configuration>
++          <instructions>
++            <Bundle-Vendor>Red Hat, Inc.</Bundle-Vendor>
++            <Bundle-SymbolicName>org.mongodb.driver-async</Bundle-SymbolicName>
++            <Export-Package>com.mongodb.*</Export-Package>
++            <Import-Package>
++              org.bson.*,
++              javax.crypto.*,
++              javax.crypto.spec.*,
++              javax.management.*,
++              javax.net.*,
++              javax.net.ssl.*,
++              javax.security.sasl.*,
++              javax.security.auth.*,
++              javax.security.auth.callback.*,
++              org.ietf.jgss.*,
++              io.netty.*;resolution:=optional,
++              org.slf4j;resolution:=optional,
++            </Import-Package>
++            <!-- Do not autogenerate uses clauses in Manifests -->
++            <_nouses>true</_nouses>
++          </instructions>
++        </configuration>
++      </plugin>
++    </plugins>
++  </build>
++</project>
+diff --git a/driver-core/pom.xml b/driver-core/pom.xml
+new file mode 100644
+index 0000000..3f6804b
+--- /dev/null
++++ b/driver-core/pom.xml
+@@ -0,0 +1,121 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <groupId>org.mongodb</groupId>
++    <artifactId>aggregator-project</artifactId>
++    <version>@VERSION@</version>
++  </parent>
++  <groupId>org.mongodb</groupId>
++  <artifactId>mongodb-driver-core</artifactId>
++  <version>@VERSION@</version>
++  <name>MongoDB Java Driver Core</name>
++  <description>The Java operations layer for the MongoDB Java Driver. Third parties can ' +
++                                                   'wrap this layer to provide custom higher-level APIs</description>
++  <url>http://www.mongodb.org</url>
++  <packaging>bundle</packaging>
++  <licenses>
++    <license>
++      <name>The Apache Software License, Version 2.0</name>
++      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++      <distribution>repo</distribution>
++    </license>
++  </licenses>
++  <developers>
++    <developer>
++      <name>Various</name>
++      <organization>MongoDB</organization>
++    </developer>
++  </developers>
++  <scm>
++    <connection>scm:https://github.com/mongodb/mongo-java-driver.git</connection>
++    <developerConnection>scm:git@github.com:mongodb/mongo-java-driver.git</developerConnection>
++    <url>https://github.com/mongodb/mongo-java-driver</url>
++  </scm>
++  <dependencies>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>bson</artifactId>
++      <version>@VERSION@</version>
++    </dependency>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-buffer</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-transport</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-handler</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.slf4j</groupId>
++      <artifactId>slf4j-api</artifactId>
++      <version>1.7.6</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>bson</artifactId>
++      <type>test-jar</type>
++      <version>@VERSION@</version>
++      <scope>test</scope>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>
++      <scope>test</scope>
++    </dependency>
++  </dependencies>
++  <build>
++    <sourceDirectory>src/main</sourceDirectory>
++    <testSourceDirectory>src/test/unit</testSourceDirectory>
++    <plugins>
++      <plugin>
++        <artifactId>maven-compiler-plugin</artifactId>
++        <configuration>
++          <source>1.7</source>
++          <target>1.7</target>
++        </configuration>
++      </plugin>
++      <plugin>
++        <groupId>org.apache.felix</groupId>
++        <artifactId>maven-bundle-plugin</artifactId>
++        <extensions>true</extensions>
++        <configuration>
++          <instructions>
++            <Bundle-Vendor>Red Hat, Inc.</Bundle-Vendor>
++            <Bundle-SymbolicName>org.mongodb.driver-core</Bundle-SymbolicName>
++            <Export-Package>com.mongodb.*</Export-Package>
++            <Import-Package>
++              org.bson.*,
++              javax.crypto.*,
++              javax.crypto.spec.*,
++              javax.management.*,
++              javax.net.*,
++              javax.net.ssl.*,
++              javax.security.sasl.*,
++              javax.security.auth.*,
++              javax.security.auth.callback.*,
++              org.ietf.jgss.*,
++              io.netty.*;resolution:=optional,
++              org.slf4j;resolution:=optional,
++            </Import-Package>
++            <!-- Do not autogenerate uses clauses in Manifests -->
++            <_nouses>true</_nouses>
++          </instructions>
++        </configuration>
++      </plugin>
++    </plugins>
++  </build>
++</project>
+diff --git a/driver-core/src/test/unit/com/mongodb/ConnectionStringTest.java b/driver-core/src/test/unit/com/mongodb/ConnectionStringTest.java
+index 047b447..441476e 100644
+--- a/driver-core/src/test/unit/com/mongodb/ConnectionStringTest.java
++++ b/driver-core/src/test/unit/com/mongodb/ConnectionStringTest.java
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-package com.mongodb.client;
++package com.mongodb;
+ 
+ import com.mongodb.AuthenticationMechanism;
+ import com.mongodb.ConnectionString;
+diff --git a/driver/pom.xml b/driver/pom.xml
+new file mode 100644
+index 0000000..c2b9606
+--- /dev/null
++++ b/driver/pom.xml
+@@ -0,0 +1,77 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <groupId>org.mongodb</groupId>
++    <artifactId>aggregator-project</artifactId>
++    <version>@VERSION@</version>
++  </parent>
++  <groupId>org.mongodb</groupId>
++  <artifactId>mongodb-driver</artifactId>
++  <version>@VERSION@</version>
++  <name>MongoDB Driver</name>
++  <description>The MongoDB Driver</description>
++  <url>http://www.mongodb.org</url>
++  <licenses>
++    <license>
++      <name>The Apache Software License, Version 2.0</name>
++      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++      <distribution>repo</distribution>
++    </license>
++  </licenses>
++  <developers>
++    <developer>
++      <name>Various</name>
++      <organization>MongoDB</organization>
++    </developer>
++  </developers>
++  <scm>
++    <connection>scm:https://github.com/mongodb/mongo-java-driver.git</connection>
++    <developerConnection>scm:git@github.com:mongodb/mongo-java-driver.git</developerConnection>
++    <url>https://github.com/mongodb/mongo-java-driver</url>
++  </scm>
++  <dependencies>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>bson</artifactId>
++      <version>@VERSION@</version>
++    </dependency>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>mongodb-driver-core</artifactId>
++      <version>@VERSION@</version>
++    </dependency>
++    <dependency>
++      <groupId>org.slf4j</groupId>
++      <artifactId>slf4j-api</artifactId>
++      <version>1.7.6</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>junit</groupId>
++      <artifactId>junit</artifactId>
++      <version>4.12</version>
++      <scope>test</scope>
++    </dependency>
++    <dependency>
++      <groupId>org.hamcrest</groupId>
++      <artifactId>hamcrest-library</artifactId>
++      <version>1.3</version>
++      <scope>test</scope>
++    </dependency>
++  </dependencies>
++  <build>
++    <sourceDirectory>src/main</sourceDirectory>
++    <testSourceDirectory>src/test/unit</testSourceDirectory>
++    <plugins>
++      <plugin>
++        <artifactId>maven-compiler-plugin</artifactId>
++        <configuration>
++          <source>1.7</source>
++          <target>1.7</target>
++        </configuration>
++      </plugin>
++    </plugins>
++  </build>
++</project>
+diff --git a/mongo-java-driver/pom.xml b/mongo-java-driver/pom.xml
+new file mode 100644
+index 0000000..14092e0
+--- /dev/null
++++ b/mongo-java-driver/pom.xml
+@@ -0,0 +1,133 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
++  <modelVersion>4.0.0</modelVersion>
++  <parent>
++    <groupId>org.mongodb</groupId>
++    <artifactId>aggregator-project</artifactId>
++    <version>@VERSION@</version>
++  </parent>
++  <groupId>org.mongodb</groupId>
++  <artifactId>mongo-java-driver</artifactId>
++  <version>@VERSION@</version>
++  <name>MongoDB Java Driver</name>
++  <description>The MongoDB Java Driver uber-artifact, containing mongodb-driver, mongodb-driver-core, and bson</description>
++  <url>http://www.mongodb.org</url>
++  <packaging>bundle</packaging>
++  <licenses>
++    <license>
++      <name>The Apache Software License, Version 2.0</name>
++      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++      <distribution>repo</distribution>
++    </license>
++  </licenses>
++  <developers>
++    <developer>
++      <name>Various</name>
++      <organization>MongoDB</organization>
++    </developer>
++  </developers>
++  <scm>
++    <connection>scm:https://github.com/mongodb/mongo-java-driver.git</connection>
++    <developerConnection>scm:git@github.com:mongodb/mongo-java-driver.git</developerConnection>
++    <url>https://github.com/mongodb/mongo-java-driver</url>
++  </scm>
++  <dependencies>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-buffer</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-transport</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>io.netty</groupId>
++      <artifactId>netty-handler</artifactId>
++      <version>4.0.26.Final</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.slf4j</groupId>
++      <artifactId>slf4j-api</artifactId>
++      <version>1.7.6</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>mongodb-driver</artifactId>
++      <version>@VERSION@</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>mongodb-driver-core</artifactId>
++      <version>@VERSION@</version>
++      <optional>true</optional>
++    </dependency>
++    <dependency>
++      <groupId>org.mongodb</groupId>
++      <artifactId>bson</artifactId>
++      <version>@VERSION@</version>
++      <optional>true</optional>
++    </dependency>
++  </dependencies>
++  <build>
++    <plugins>
++      <plugin>
++        <artifactId>maven-shade-plugin</artifactId>
++        <version>2.4.3</version>
++        <executions>
++          <execution>
++            <phase>package</phase>
++            <goals>
++              <goal>shade</goal>
++            </goals>
++          </execution>
++        </executions>
++        <configuration>
++          <artifactSet>
++            <includes>
++              <include>org.mongodb:*</include>
++            </includes>
++          </artifactSet>
++        </configuration>
++      </plugin>
++      <plugin>
++        <groupId>org.apache.felix</groupId>
++        <artifactId>maven-bundle-plugin</artifactId>
++        <extensions>true</extensions>
++        <configuration>
++          <instructions>
++            <Bundle-Vendor>Red Hat, Inc.</Bundle-Vendor>
++            <Bundle-SymbolicName>org.mongodb.mongo-java-driver</Bundle-SymbolicName>
++            <Export-Package>
++              com.mongodb.*,
++              org.bson.*,
++            </Export-Package>
++            <Import-Package>
++              javax.xml.bind.*,
++              javax.crypto.*,
++              javax.management.*,
++              javax.naming.*,
++              javax.naming.spi.*,
++              javax.net.*,
++              javax.security.sasl.*,
++              javax.security.auth.*,
++              javax.security.auth.callback.*,
++              org.ietf.jgss.*,
++              io.netty.*;resolution:=optional,
++              org.slf4j;resolution:=optional,
++            </Import-Package>
++            <!-- Do not autogenerate uses clauses in Manifests -->
++            <_nouses>true</_nouses>
++          </instructions>
++        </configuration>
++      </plugin>
++    </plugins>
++  </build>
++</project>
+diff --git a/pom.xml b/pom.xml
+new file mode 100644
+index 0000000..63c6925
+--- /dev/null
++++ b/pom.xml
+@@ -0,0 +1,27 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
++  <modelVersion>4.0.0</modelVersion>
++  <groupId>org.mongodb</groupId>
++  <artifactId>aggregator-project</artifactId>
++  <version>@VERSION@</version>
++  <packaging>pom</packaging>
++  <modules>
++    <module>mongo-java-driver</module>
++    <module>bson</module>
++    <module>driver-core</module>
++    <module>driver-async</module>
++    <module>driver</module>
++  </modules>
++  <build>
++    <pluginManagement>
++      <plugins>
++        <plugin>
++          <groupId>org.apache.felix</groupId>
++          <artifactId>maven-bundle-plugin</artifactId>
++          <version>1.4.0</version>
++        </plugin>
++      </plugins>
++    </pluginManagement>
++  </build>
++</project>
+-- 
+2.9.4
+
